@@ -11,8 +11,67 @@
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;700&display=swap" rel="stylesheet">
 
 <style>
-/* (Your original CSS preserved) */
-/* dropdown arrow styling */
+/* (kept your styles exactly as provided) */
+.custom-select {
+  position: relative;
+  font-family: Arial;
+  user-select: none;
+  width: 100%;
+}
+
+.select-selected {
+  background-color: #eee;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  color: #333;
+  text-align: left;
+  position: relative;
+}
+
+.select-selected.placeholder {
+  color: #aaa;
+}
+
+.select-selected::after {
+  content: "\25BC";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6em;
+  pointer-events: none;
+}
+
+.select-selected.select-arrow-active::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.select-items {
+  position: absolute;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-top: none;
+  z-index: 99;
+  width: 100%;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.select-items div {
+  padding: 8px 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.select-items div:hover {
+  background-color: #f1f1f1;
+}
+
+.select-hide { display: none; }
+.select-selected { border-radius: 6px; }
+.select-items { border-radius: 0 0 6px 6px; }
+
 select.input-field {
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
@@ -27,7 +86,6 @@ select.input-field {
 }
 select.input-field::-ms-expand { display: none !important; }
 
-/* page & builder */
 html, body { margin:0; padding:0; height:100%; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background-color: #f7f7f7; }
 .builder-container { max-width: 850px; margin: 120px auto; background:#fff; border-radius:16px; box-shadow:0 6px 24px rgba(0,0,0,0.1); padding:40px 60px; text-align:center; transition: all 0.4s ease; }
 .step { display: none; }
@@ -56,17 +114,13 @@ button.next-step:hover, button.prev-step:hover, button#add-to-cart:hover, button
 
 #total-price { font-size:1.3rem; font-weight:500; margin-top:15px; text-align:right; }
 
-/* small screens */
 @media (max-width:600px) { .builder-container { padding:30px 20px; } }
 
-/* common input class */
 .input-field { width:100%; padding:12px; margin-bottom:16px; border:1px solid #ccc; border-radius:8px; background-color:#fafafa; font-size:1rem; color:#333; transition:border-color 0.18s ease, box-shadow 0.18s ease; appearance:none; }
 .input-field:focus { outline:none; border-color:#5c6bc0; box-shadow:0 0 0 3px rgba(92,107,192,0.12); }
 
-/* error highlight */
 .error { border-color: #d9534f !important; box-shadow: 0 0 0 4px rgba(217,83,79,0.06) !important; }
 
-/* small util */
 .row { display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap; }
 .option-card {
   border: 1px solid #eee; border-radius:10px; padding:14px; width:100%; max-width:380px; cursor:pointer;
@@ -77,8 +131,26 @@ button.next-step:hover, button.prev-step:hover, button#add-to-cart:hover, button
 .option-title { font-weight:600; margin-bottom:6px; }
 .option-desc { color:#666; font-size:0.95rem; }
 
-/* ensure textarea looks good on mobile */
 textarea.input-field { min-height:90px; resize:vertical; }
+#summary, #summary_custom { min-height: 120px; }
+
+.select-existing-container {
+  margin-top: 18px;
+  text-align: center;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.select-existing-container label {
+  display: block;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+@media (max-width: 650px) {
+  .step1-options { flex-direction: column; align-items: center; }
+  .step1-options .option-card { max-width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -123,7 +195,7 @@ textarea.input-field { min-height:90px; resize:vertical; }
       <h2>Step 1: Choose What You Want to Do</h2>
       <p class="step-desc">Pick an option. "Customize a Product" lets you choose an existing product and request changes. "Create your own" starts the fully-custom flow.</p>
 
-      <div class="row" style="justify-content:space-between;">
+      <div class="row step1-options">
         <label class="option-card" id="opt-customize" title="Pick this to modify an existing product">
           <div style="display:flex; align-items:center;">
             <input type="radio" name="create-mode" value="customize" class="option-radio" id="mode-customize" checked>
@@ -145,7 +217,7 @@ textarea.input-field { min-height:90px; resize:vertical; }
         </label>
       </div>
 
-      <div style="margin-top:18px; text-align:left; max-width:480px; margin-left:auto; margin-right:auto;">
+      <div class="select-existing-container">
         <label id="select-existing-label" for="select-existing">If customizing, pick a product:</label>
         <select id="select-existing" class="input-field">
           <option value="">-- Select a product to customize --</option>
@@ -167,12 +239,16 @@ textarea.input-field { min-height:90px; resize:vertical; }
       <input type="text" id="custom-text" class="input-field" placeholder="Enter text for engraving (optional)">
 
       <label for="font-select">Font (required if text entered)</label>
-      <select id="font-select" class="input-field">
+      <select id="font-select" name="font" class="input-field">
         <option value="">-- Select a Font --</option>
-        <option value="serif">Serif</option>
-        <option value="sans-serif">Sans Serif</option>
-        <option value="script">Script</option>
-        <option value="monospace">Monospace</option>
+        <option value="Arial" style="font-family: Arial;">Arial</option>
+        <option value="Apple Chancery" style="font-family: 'Apple Chancery', cursive;">Apple Chancery</option>
+        <option value="Academy Engraved LET" style="font-family: 'Academy Engraved LET', serif;">Academy Engraved LET</option>
+        <option value="American Typewriter" style="font-family: 'American Typewriter', serif;">American Typewriter</option>
+        <option value="Apple Symbols" style="font-family: 'Apple Symbols';">Apple Symbols</option>
+        <option value="Charmonman" style="font-family: 'Charmonman', cursive;">Charmonman</option>
+        <option value="Times New Roman" style="font-family: 'Times New Roman', serif;">Times New Roman</option>
+        <option value="Source Code Pro" style="font-family: 'Source Code Pro', monospace;">Source Code Pro</option>
       </select>
 
       <label for="text-location">Text Placement (only necessary if you entered text)</label>
@@ -196,8 +272,8 @@ textarea.input-field { min-height:90px; resize:vertical; }
       <textarea id="additional-desc" class="input-field" rows="3" placeholder="Any other details about your design?"></textarea>
 
       <div class="buttons">
-        <button type="button" class="prev-step" data-prev="step1">Back</button>
-        <button type="button" class="next-step" data-next="step3">Next</button>
+        <button class="prev-step" data-prev="step1">Back</button>
+        <button class="next-step" data-next="step3">Next</button>
       </div>
     </div>
 
@@ -232,14 +308,14 @@ textarea.input-field { min-height:90px; resize:vertical; }
       <p class="step-desc">Check your selections below before adding to cart.</p>
       <div id="summary" style="text-align:left;"></div>
       <p id="total-price">Total: $0.00</p>
-		<!-- Add to both Step 3 sections -->
-<div class="verify-section" style="margin-top:20px; text-align:left;">
-  <label for="verify-name">Your Name</label>
-  <input type="text" id="verify-name" class="input-field" placeholder="Enter your name" required>
 
-  <label for="verify-email">Your Email</label>
-  <input type="email" id="verify-email" class="input-field" placeholder="Enter your email" required>
-</div>
+      <div class="verify-section" style="margin-top:20px; text-align:left;">
+        <label for="verify-name">Your Name</label>
+        <input type="text" id="verify-name" class="input-field" placeholder="Enter your name" required>
+
+        <label for="verify-email">Your Email</label>
+        <input type="email" id="verify-email" class="input-field" placeholder="Enter your email" required>
+      </div>
       <button type="button" class="prev-step" data-prev="step2">Back</button>
       <button type="button" id="add-to-cart">Add to Cart</button>
     </div>
@@ -250,13 +326,14 @@ textarea.input-field { min-height:90px; resize:vertical; }
       <p class="step-desc">Confirm your customizations and add to cart.</p>
       <div id="summary_custom" style="text-align:left;"></div>
       <p id="total-price-custom">Total: $0.00</p>
-	<div class="verify-section" style="margin-top:20px; text-align:left;">
-  <label for="verify-name-custom">Your Name</label>
-  <input type="text" id="verify-name-custom" class="input-field" placeholder="Enter your name" required>
 
-  <label for="verify-email-custom">Your Email</label>
-  <input type="email" id="verify-email-custom" class="input-field" placeholder="Enter your email" required>
-</div>
+      <div class="verify-section" style="margin-top:20px; text-align:left;">
+        <label for="verify-name-custom">Your Name</label>
+        <input type="text" id="verify-name-custom" class="input-field" placeholder="Enter your name" required>
+
+        <label for="verify-email-custom">Your Email</label>
+        <input type="email" id="verify-email-custom" class="input-field" placeholder="Enter your email" required>
+      </div>
       <button type="button" class="prev-step" data-prev="step2_custom">Back</button>
       <button type="button" id="add-to-cart-custom">Add to Cart</button>
     </div>
@@ -277,7 +354,7 @@ textarea.input-field { min-height:90px; resize:vertical; }
   <input type="hidden" name="from_name" value="MozartLaser.com">
 
   <!-- Generic fields -->
-  <input type="hidden" name="flow_type" id="f-flow-type"> <!-- 'full' or 'customize' -->
+  <input type="hidden" name="flow_type" id="f-flow-type">
   <input type="hidden" name="product" id="f-product">
   <input type="hidden" name="shape" id="f-shape">
 
@@ -306,9 +383,8 @@ textarea.input-field { min-height:90px; resize:vertical; }
   <div class="footer-content">
     <div class="social-links">
       <a href="https://facebook.com" target="_blank" aria-label="Facebook"><img src="images/facebook-icon.png" alt="Facebook"></a>
-	<a href="https://instagram.com" target="_blank" aria-label="Instagram"><img src="images/instagram-icon.png" alt="Instagram"></a>
+      <a href="https://instagram.com" target="_blank" aria-label="Instagram"><img src="images/instagram-icon.png" alt="Instagram"></a>
       <a href="https://x.com" target="_blank" aria-label="X"><img src="images/X-icon.png" alt="X"></a>
-      
     </div>
     <p>&copy; 2025 Mozart Laser. All rights reserved.</p>
   </div>

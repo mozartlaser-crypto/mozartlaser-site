@@ -1,408 +1,466 @@
+// js/create.js
+// ============================
+// CREATE.JS — Clean rewrite for step navigation, validation, and summary generation
+// ============================
+
 document.addEventListener('DOMContentLoaded', () => {
+
+  // ---------------------
+  // State & helpers
+  // ---------------------
+  let cartItemsArray = [];
+  let currentPrice = 20;
+
+  const $ = (sel) => document.querySelector(sel);
+
+function addToCartVisual(productName, price) {
+    if (window.addToCart) {
+        window.addToCart(productName, price);
+    } else {
+        console.warn("cart.js not loaded yet");
+    }
+}
+
+  // ---------------------
   // Elements
-  const steps = document.querySelectorAll('.step');
-  const modeCustomize = document.getElementById('mode-customize');
-  const modeFull = document.getElementById('mode-full');
-  const selectExisting = document.getElementById('select-existing');
-  const selectExistingLabel = document.getElementById('select-existing-label');
-  const step1Next = document.getElementById('step1-next');
+  // ---------------------
+  const steps = Array.from(document.querySelectorAll('.step'));
+  const modeCustomize = $('#mode-customize');
+  const modeFull = $('#mode-full');
+  const selectExisting = $('#select-existing');
+  const uploadFileInput = $('#upload-file');
+  const uploadFileCustom = $('#upload-file-custom');
+  const deleteFileBtn = $('#delete-file');
+  const deleteFileCustom = $('#delete-file-custom');
+  const filePlacementInput = $('#file-placement');
+  const filePlacementCustom = $('#file-placement-custom');
+  const textField = $('#custom-text');
+  const fontSelect = $('#font-select');
+  const textLocation = $('#text-location');
+  const additionalDesc = $('#additional-desc');
+  const customChanges = $('#custom-changes');
+  const selectedProductText = $('#selected-product-text');
+  const sendForm = $('#sendForm');
 
-  // Full flow fields
-  const textField = document.getElementById('custom-text');
-  const fontSelect = document.getElementById('font-select');
-  const textLocation = document.getElementById('text-location');
-  const uploadFileInput = document.getElementById('upload-file');
-  const deleteFileBtn = document.getElementById('delete-file');
-  const filePlacementInput = document.getElementById('file-placement');
-  const additionalDesc = document.getElementById('additional-desc');
+  // hidden form fields
+  const hiddenFlowType = $('#f-flow-type');
+  const hiddenProduct = $('#f-product');
+  const hiddenText = $('#f-text');
+  const hiddenFont = $('#f-font');
+  const hiddenLocation = $('#f-location');
+  const hiddenFilePlacement = $('#f-file-placement');
+  const hiddenDescription = $('#f-description');
+  const hiddenSelectedProduct = $('#f-selected-product');
+  const hiddenCustomChanges = $('#f-custom-changes');
+  const hiddenCustomFilePlacement = $('#f-custom-file-placement');
+  const hiddenPrice = $('#f-price');
+  const hiddenEmail = $('#f-email');
 
-  // Customize fields
-  const selectedProductText = document.getElementById('selected-product-text');
-  const customChanges = document.getElementById('custom-changes');
-  const uploadFileCustom = document.getElementById('upload-file-custom');
-  const deleteFileCustom = document.getElementById('delete-file-custom');
-  const filePlacementCustom = document.getElementById('file-placement-custom');
-
-  // Review & hidden
-  const summary = document.getElementById('summary');
-  const summaryCustom = document.getElementById('summary_custom');
-  const totalPriceEl = document.getElementById('total-price');
-  const totalPriceCustomEl = document.getElementById('total-price-custom');
-
-  const sendForm = document.getElementById('sendForm');
-  const hiddenFlowType = document.getElementById('f-flow-type');
-  const hiddenProduct = document.getElementById('f-product');
-  const hiddenShape = document.getElementById('f-shape');
-  const hiddenText = document.getElementById('f-text');
-  const hiddenFont = document.getElementById('f-font');
-  const hiddenLocation = document.getElementById('f-location');
-  const hiddenFilePlacement = document.getElementById('f-file-placement');
-  const hiddenDescription = document.getElementById('f-description');
-  const hiddenSelectedProduct = document.getElementById('f-selected-product');
-  const hiddenCustomChanges = document.getElementById('f-custom-changes');
-  const hiddenCustomFilePlacement = document.getElementById('f-custom-file-placement');
-  const hiddenPrice = document.getElementById('f-price');
-  const hiddenEmail = document.getElementById('f-email');
-
-  // Hidden file input
-  let hiddenFileInput = document.getElementById('f-design');
-  if (!hiddenFileInput) {
-    hiddenFileInput = document.createElement('input');
-    hiddenFileInput.type = 'file';
-    hiddenFileInput.name = 'design_file';
-    hiddenFileInput.id = 'f-design';
-    hiddenFileInput.style.display = 'none';
-    sendForm.appendChild(hiddenFileInput);
-  }
-
-  // Prices
-  const prices = {
-    'Plaque (Portrait)': 50,
-    'Plaque (Landscape)': 50,
-    'Coin': 25,
-    'Wallet': 35,
-    'Cross with Scripture': 50,
-    'Train Plaque': 50,
-    'Leather Wallet': 35,
-    default: 50
-  };
-  let currentPrice = prices.default;
-
-  // Helpers
-  function showStep(id) {
+  // ---------------------
+  // Utility: steps
+  // ---------------------
+  function showStep(stepId) {
     steps.forEach(s => s.classList.remove('active'));
-    const el = document.getElementById(id);
+    const el = document.getElementById(stepId);
     if (el) el.classList.add('active');
-    updatePrice();
-    if (id === 'step3') updateSummary();
-    if (id === 'step3_custom') updateSummaryCustom();
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo(0, 0);
   }
 
+  // ---------------------
+  // STEP 1: populate dropdown depending on mode
+  // (THIS IS SEPARATE FROM CART)
+  // ---------------------
   function populateSelectForMode() {
-    if (modeFull.checked) {
-      selectExistingLabel.textContent = "Select product type:";
+    if (!selectExisting) return;
+    if (modeCustomize && modeCustomize.checked) {
       selectExisting.innerHTML = `
-        <option value="">-- Select a product type --</option>
-        <option value="Plaque (Portrait)">Plaque (Portrait)</option>
-        <option value="Plaque (Landscape)">Plaque (Landscape)</option>
+        <option value="">-- Choose a Product to Customize --</option>
+        <option value="Coin - Dragon">Coin - Dragon</option>
+        <option value="Wallet - Minimalist">Wallet - Minimalist</option>
+        <option value="Wallet - Leather">Wallet - Leather</option>
+        <option value="Plaque - Music">Plaque - Music</option>
+      `;
+    } else {
+      selectExisting.innerHTML = `
+        <option value="">-- Select Product Type --</option>
+        <option value="Plaque (Horizontal)">Plaque (Horizontal)</option>
+        <option value="Plaque (Vertical)">Plaque (Vertical)</option>
         <option value="Coin">Coin</option>
         <option value="Wallet">Wallet</option>
       `;
+    }
+    updatePrice();
+  }
+
+  // ---------------------
+  // Price logic
+  // ---------------------
+  function updatePrice() {
+    if (!selectExisting) { currentPrice = 20; return; }
+
+    if (modeCustomize && modeCustomize.checked) {
+      currentPrice = 25;
     } else {
-      selectExistingLabel.textContent = "Choose a product";
-      selectExisting.innerHTML = `
-        <option value="">-- Select a product to customize --</option>
-        <option value="Cross with Scripture">Cross with Scripture — Plaque</option>
-        <option value="Train Plaque">Train Plaque — Plaque</option>
-        <option value="Leather Wallet">Leather Wallet — Coin-sized</option>
+      const product = selectExisting.value || '';
+      if (product.includes('Plaque')) currentPrice = 40;
+      else if (product.includes('Coin')) currentPrice = 25;
+      else if (product.includes('Wallet')) currentPrice = 35;
+      else currentPrice = 20;
+    }
+
+    const step3Price = $('#total-price');
+    if (step3Price) step3Price.textContent = `Total: $${currentPrice}`;
+
+    const step3CustomPrice = $('#total-price-custom');
+    if (step3CustomPrice) step3CustomPrice.textContent = `Total: $${currentPrice}`;
+  }
+
+  // ---------------------
+  // File copying helper (for hidden form)
+  // ---------------------
+  function copyFileIntoHiddenInput(input) {
+    if (!sendForm) return;
+    const fileField = sendForm.querySelector('input[type="file"]');
+    if (!fileField) return;
+    if (input && input.files && input.files.length > 0) {
+      const dt = new DataTransfer();
+      dt.items.add(input.files[0]);
+      fileField.files = dt.files;
+    } else {
+      // clear file input
+      try { fileField.value = ''; } catch (e) { /* ignore */ }
+    }
+  }
+
+  // ---------------------
+  // Validation
+  // ---------------------
+  function validateFullStep2() {
+    const text = (textField && textField.value || '').trim();
+    const font = (fontSelect && fontSelect.value) || '';
+    const desc = (additionalDesc && additionalDesc.value || '').trim();
+    const fileInput = uploadFileInput;
+    const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+
+    if (!text && !hasFile && !desc) {
+      alert('Please enter text, upload a file, or add a description.');
+      return false;
+    }
+    if (text && !font) {
+      alert('Please select a font for your engraved text.');
+      return false;
+    }
+    if (hasFile && filePlacementInput && !filePlacementInput.value.trim()) {
+      alert('Please describe how your uploaded design should be placed.');
+      return false;
+    }
+    return true;
+  }
+
+  function validateCustomStep2() {
+    const selected = (selectExisting && selectExisting.value) || '';
+    const changes = (customChanges && customChanges.value || '').trim();
+    const hasFile = uploadFileCustom && uploadFileCustom.files && uploadFileCustom.files.length > 0;
+    if (!selected) {
+      alert('Please select a product to customize.');
+      return false;
+    }
+    if (!changes && !hasFile) {
+      alert('Please describe your changes or upload a design.');
+      return false;
+    }
+    return true;
+  }
+
+  // ---------------------
+  // Summary generation
+  // ---------------------
+  function escapeHtml(str) {
+    return String(str || '')
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+  }
+
+  function populateStep3Summary() {
+    const s = $('#summary');
+    if (s) {
+      const text = (textField && textField.value.trim()) || 'None';
+      const font = (fontSelect && fontSelect.value) || 'None';
+      const textLoc = (textLocation && textLocation.value.trim()) || 'None';
+      const fileName = (uploadFileInput && uploadFileInput.files && uploadFileInput.files.length > 0)
+        ? uploadFileInput.files[0].name
+        : 'None';
+      const desc = (additionalDesc && additionalDesc.value.trim()) || 'None';
+
+      s.innerHTML = `
+        <p><strong>Engraved Text:</strong> ${escapeHtml(text)}</p>
+        <p><strong>Font:</strong> ${escapeHtml(font)}</p>
+        <p><strong>Text Placement:</strong> ${escapeHtml(textLoc)}</p>
+        <p><strong>Uploaded File:</strong> ${escapeHtml(fileName)}</p>
+        <p><strong>Additional Description:</strong> ${escapeHtml(desc)}</p>
+        <p><strong>Price:</strong> $${currentPrice}</p>
       `;
     }
-    selectedProductText.textContent = selectExisting.value || 'None';
-  }
 
-  function updatePrice() {
-    const val = selectExisting.value;
-    currentPrice = (val && prices[val] !== undefined) ? prices[val] : prices.default;
-    const display = currentPrice.toFixed ? currentPrice.toFixed(2) : '0.00';
-    if (totalPriceEl) totalPriceEl.textContent = `Total: $${display}`;
-    if (totalPriceCustomEl) totalPriceCustomEl.textContent = `Total: $${display}`;
-  }
+    const sc = $('#summary_custom');
+    if (sc) {
+      const selected = (selectExisting && selectExisting.value) || 'None';
+      const changes = (customChanges && customChanges.value.trim()) || 'None';
+      const fileNameCustom = (uploadFileCustom && uploadFileCustom.files && uploadFileCustom.files.length > 0)
+        ? uploadFileCustom.files[0].name
+        : 'None';
+      const placementCustom = (filePlacementCustom && filePlacementCustom.value.trim()) || 'None';
 
-  function escapeHtml(s) {
-    if (!s) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;')
-                    .replace(/'/g,'&#39;').replace(/</g,'&lt;')
-                    .replace(/>/g,'&gt;');
-  }
-
-  function updateSummary() {
-    const product = selectExisting.value || 'N/A';
-    const text = textField.value.trim() || '';
-    const font = fontSelect.value || '';
-    const location = textLocation.value.trim() || '';
-    const placement = filePlacementInput.value.trim() || '';
-    const desc = additionalDesc.value.trim() || '';
-    const file = uploadFileInput && uploadFileInput.files && uploadFileInput.files[0];
-    const fileName = file ? file.name : 'No file uploaded';
-    let html = `<p><strong>Product / Type:</strong> ${escapeHtml(product)}</p>`;
-    html += `<p><strong>Engraved Text:</strong> ${escapeHtml(text || 'None')}</p>`;
-    html += `<p><strong>Font:</strong> ${escapeHtml(font || 'N/A')}</p>`;
-    html += `<p><strong>Text Placement:</strong> ${escapeHtml(location || 'Not specified')}</p>`;
-    html += `<p><strong>File Placement:</strong> ${escapeHtml(placement || 'N/A')}</p>`;
-    html += `<p><strong>Additional Description:</strong> ${escapeHtml(desc || 'None')}</p>`;
-    html += `<p><strong>Design File:</strong> ${escapeHtml(fileName)}</p>`;
-    html += `<p style="margin-top:10px;"><strong>Price:</strong> $${currentPrice.toFixed(2)}</p>`;
-    summary.innerHTML = html;
-  }
-
-  function updateSummaryCustom() {
-    const selected = selectExisting.value || 'None';
-    const changes = customChanges.value.trim() || '';
-    const placement = filePlacementCustom.value.trim() || '';
-    const file = uploadFileCustom && uploadFileCustom.files && uploadFileCustom.files[0];
-    const fileName = file ? file.name : 'No file uploaded';
-    let html = `<p><strong>Selected Product:</strong> ${escapeHtml(selected)}</p>`;
-    html += `<p><strong>Requested Changes:</strong> ${escapeHtml(changes || 'None')}</p>`;
-    html += `<p><strong>File Placement:</strong> ${escapeHtml(placement || 'N/A')}</p>`;
-    html += `<p><strong>Design File:</strong> ${escapeHtml(fileName)}</p>`;
-    html += `<p style="margin-top:10px;"><strong>Price:</strong> $${currentPrice.toFixed(2)}</p>`;
-    summaryCustom.innerHTML = html;
-  }
-
-  function copyFileIntoHiddenInput(sourceInput) {
-    try {
-      const files = sourceInput && sourceInput.files ? sourceInput.files : null;
-      let target = document.getElementById('f-design');
-      if (!target) {
-        target = document.createElement('input');
-        target.type = 'file';
-        target.name = 'design_file';
-        target.id = 'f-design';
-        target.style.display = 'none';
-        sendForm.appendChild(target);
-      }
-
-      if (!files || files.length === 0) {
-        const newInput = target.cloneNode(false);
-        newInput.id = 'f-design';
-        newInput.name = 'design_file';
-        newInput.style.display = 'none';
-        target.parentNode.replaceChild(newInput, target);
-      } else {
-        const dt = new DataTransfer();
-        for (let i = 0; i < files.length; i++) dt.items.add(files[i]);
-        const refreshed = document.getElementById('f-design');
-        refreshed.files = dt.files;
-      }
-    } catch (err) {
-      console.error('File copy failed', err);
+      sc.innerHTML = `
+        <p><strong>Selected Product:</strong> ${escapeHtml(selected)}</p>
+        <p><strong>Requested Changes:</strong> ${escapeHtml(changes)}</p>
+        <p><strong>Uploaded File:</strong> ${escapeHtml(fileNameCustom)}</p>
+        <p><strong>File Placement:</strong> ${escapeHtml(placementCustom)}</p>
+        <p><strong>Price:</strong> $${currentPrice}</p>
+      `;
     }
   }
 
-  // Validation
-  function validateFullStep2() {
-    const txt = textField.value.trim();
-    const hasFile = uploadFileInput.files && uploadFileInput.files.length > 0;
-    const placement = filePlacementInput.value.trim();
-    const desc = additionalDesc.value.trim();
-    const textPos = textLocation.value.trim();
-
-    // Ensure at least one field is filled
-    if (!txt && !hasFile && !placement && !desc) {
-      alert("Please fill at least one of: engraved text, upload file, file placement, or additional description.");
-      return false;
-    }
-
-    // If text is entered, require font and text placement
-    if (txt) {
-      let valid = true;
-      if (!fontSelect.value || fontSelect.value.trim() === '') {
-        fontSelect.classList.add('error');
-        valid = false;
-      } else {
-        fontSelect.classList.remove('error');
-      }
-
-      if (!textPos) {
-        textLocation.classList.add('error');
-        valid = false;
-      } else {
-        textLocation.classList.remove('error');
-      }
-
-      if (!valid) {
-        alert('Please choose a font and specify text placement when adding engraved text.');
-        return false;
-      }
-    } else {
-      fontSelect.classList.remove('error');
-      textLocation.classList.remove('error');
-    }
-
-    return true;
-  }
-
-  function validateCustomizeStep2() {
-    const changes = customChanges.value.trim();
-    const hasFile = uploadFileCustom.files && uploadFileCustom.files.length > 0;
-    const placement = filePlacementCustom.value.trim();
-    if (!changes && !hasFile && !placement) {
-      alert('Please describe requested changes or upload a file!');
-      return false;
-    }
-    return true;
-  }
-
-  function validateVerification(nameEl, emailEl) {
-    const name = nameEl.value.trim();
-    const email = emailEl.value.trim();
-    if (!name || !email) {
-      alert("Please fill out your name and email before adding to cart.");
-      if (!name) nameEl.classList.add("error");
-      if (!email) emailEl.classList.add("error");
-      return false;
-    }
-    nameEl.classList.remove("error");
-    emailEl.classList.remove("error");
-    return true;
-  }
-
-  // Mode change
-  modeCustomize.addEventListener('change', populateSelectForMode);
-  modeFull.addEventListener('change', populateSelectForMode);
-
-  // Update product and price on change
-  selectExisting.addEventListener('change', () => {
-    selectedProductText.textContent = selectExisting.value || 'None';
-    updatePrice();
-  });
-
-  // File deletes
-  if (deleteFileBtn) deleteFileBtn.addEventListener('click', () => { if (uploadFileInput) uploadFileInput.value = ''; updateSummary(); });
-  if (deleteFileCustom) deleteFileCustom.addEventListener('click', () => { if (uploadFileCustom) uploadFileCustom.value = ''; updateSummaryCustom(); });
-
-  // Step 1 branching
-  step1Next.addEventListener('click', () => {
-    const mode = modeFull.checked ? 'full' : 'customize';
-    const selectedVal = selectExisting.value.trim();
-
-    // VALIDATION: require dropdown selection for both flows
-    if (!selectedVal) {
-      alert('Please select a product before continuing.');
-      selectExisting.classList.add('error');
+  // ---------------------
+  // Step navigation (delegated handling)
+  // ---------------------
+  function handleNext(nextId) {
+    if (nextId === 'step3') {
+      if (!validateFullStep2()) return;
+      populateStep3Summary();
+      showStep('step3');
       return;
     }
-    selectExisting.classList.remove('error');
+    if (nextId === 'step3_custom') {
+      if (!validateCustomStep2()) return;
+      populateStep3Summary();
+      showStep('step3_custom');
+      return;
+    }
+    if (nextId) showStep(nextId);
+  }
 
-    if (mode === 'full') {
-      showStep('step2');
-    } else {
-      selectedProductText.textContent = selectedVal;
-      showStep('step2_custom');
+  function handlePrev(prevId) {
+    if (prevId) showStep(prevId);
+  }
+
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest && ev.target.closest('.next-step, .prev-step');
+    if (!btn) return;
+    ev.preventDefault();
+
+    if (btn.classList.contains('next-step')) {
+      if (btn.id === 'step1-next') {
+        if (!selectExisting) {
+          alert('Missing product selector.');
+          return;
+        }
+        if (modeCustomize && modeCustomize.checked) {
+          if (!selectExisting.value) {
+            alert('Please select a product to customize.');
+            return;
+          }
+          if (hiddenSelectedProduct) hiddenSelectedProduct.value = selectExisting.value;
+          if (selectedProductText) selectedProductText.textContent = selectExisting.value;
+          updatePrice();
+          showStep('step2_custom');
+          return;
+        } else {
+          updatePrice();
+          showStep('step2');
+          return;
+        }
+      }
+
+      const nextId = btn.getAttribute('data-next');
+      handleNext(nextId);
+      return;
+    }
+
+    if (btn.classList.contains('prev-step')) {
+      const prevId = btn.getAttribute('data-prev');
+      handlePrev(prevId);
     }
   });
 
-  // Next / Prev buttons
-  document.querySelectorAll('.next-step').forEach(btn => {
-    if (btn.id === 'step1-next') return;
-    btn.addEventListener('click', e => {
-      const current = e.target.closest('.step');
-      if (!current) return;
-      if (current.id === 'step2' && !validateFullStep2()) return;
-      if (current.id === 'step2_custom' && !validateCustomizeStep2()) return;
-      const next = btn.dataset.next;
-      if (next) showStep(next);
+  // ---------------------
+  // File delete buttons
+  // ---------------------
+  if (deleteFileBtn && uploadFileInput) {
+    deleteFileBtn.addEventListener('click', () => {
+      uploadFileInput.value = '';
     });
-  });
-
-  document.querySelectorAll('.prev-step').forEach(btn => {
-    btn.addEventListener('click', e => {
-      const prev = btn.dataset.prev;
-      if (prev) showStep(prev);
+  }
+  if (deleteFileCustom && uploadFileCustom) {
+    deleteFileCustom.addEventListener('click', () => {
+      uploadFileCustom.value = '';
     });
-  });
+  }
 
-  // Update summaries on input/change
-  [selectExisting, textField, fontSelect, textLocation, filePlacementInput, additionalDesc].forEach(el => { if (!el) return; el.addEventListener('input', updateSummary); el.addEventListener('change', updateSummary); });
-  [selectExisting, customChanges, filePlacementCustom].forEach(el => { if (!el) return; el.addEventListener('input', updateSummaryCustom); el.addEventListener('change', updateSummaryCustom); });
-  if (uploadFileInput) uploadFileInput.addEventListener('change', updateSummary);
-  if (uploadFileCustom) uploadFileCustom.addEventListener('change', updateSummaryCustom);
+  // ---------------------
+  // Mode toggles & select change
+  // ---------------------
+  if (modeCustomize) modeCustomize.addEventListener('change', populateSelectForMode);
+  if (modeFull) modeFull.addEventListener('change', populateSelectForMode);
 
-  // ✅ Add-to-cart (full)
-  const addToCartBtn = document.getElementById('add-to-cart');
+  if (selectExisting) {
+    selectExisting.addEventListener('change', () => {
+      updatePrice();
+      if (selectedProductText) selectedProductText.textContent = selectExisting.value || 'None';
+    });
+  }
+
+  // ---------------------
+  // Add to cart handlers (full & custom flows)
+  // Important: add to cart (storage + render) happens BEFORE sending the hidden form.
+  // ---------------------
+  const addToCartBtn = $('#add-to-cart');
   if (addToCartBtn) {
     addToCartBtn.addEventListener('click', () => {
-      const nameEl = document.getElementById('verify-name');
-      const emailEl = document.getElementById('verify-email');
+      const name = ($('#verify-name') && $('#verify-name').value.trim()) || '';
+      const email = ($('#verify-email') && $('#verify-email').value.trim()) || '';
+      if (!name || !email) return alert('Please enter your name and email.');
 
-      // Update summary first
-      updateSummary();
+      const productName = selectExisting ? selectExisting.value || 'Custom Product' : 'Custom Product';
+      const priceAtClick = currentPrice;
 
-      // Validation
-      if (!validateVerification(nameEl, emailEl)) return;
-      if (!validateFullStep2()) { showStep('step2'); return; }
+      // Add to cart (persisted)
+      addToCartVisual(productName, priceAtClick);
 
-      // Fill hidden fields
-      hiddenFlowType.value = 'full';
-      hiddenProduct.value = selectExisting.value || '';
-      hiddenShape.value = selectExisting.value || '';
-      hiddenText.value = textField.value.trim() || '';
-      hiddenFont.value = fontSelect.value || '';
-      hiddenLocation.value = textLocation.value.trim() || '';
-      hiddenFilePlacement.value = filePlacementInput.value.trim() || '';
-      hiddenDescription.value = additionalDesc.value.trim() || '';
-      hiddenPrice.value = Number(currentPrice).toFixed(2);
+      // populate hidden form fields
+      if (hiddenFlowType) hiddenFlowType.value = 'create-your-own';
+      if (hiddenProduct) hiddenProduct.value = selectExisting ? selectExisting.value : '';
+      if (hiddenText) hiddenText.value = textField ? textField.value : '';
+      if (hiddenFont) hiddenFont.value = fontSelect ? fontSelect.value : '';
+      if (hiddenLocation) hiddenLocation.value = textLocation ? textLocation.value : '';
+      if (hiddenFilePlacement) hiddenFilePlacement.value = filePlacementInput ? filePlacementInput.value : '';
+      if (hiddenDescription) hiddenDescription.value = additionalDesc ? additionalDesc.value : '';
+      if (hiddenPrice) hiddenPrice.value = `$${priceAtClick}`;
+      if (hiddenEmail) hiddenEmail.value = email;
 
-      // Ensure name gets sent
-      let hiddenName = document.getElementById('f-name');
-      if (!hiddenName) {
-        hiddenName = document.createElement('input');
-        hiddenName.type = 'hidden';
-        hiddenName.name = 'name';
-        hiddenName.id = 'f-name';
-        sendForm.appendChild(hiddenName);
+      copyFileIntoHiddenInput(uploadFileInput || null);
+
+      // submit silently to backend (if desired)
+      if (sendForm) {
+        try { sendForm.submit(); } catch (e) { console.warn('Form submit failed', e); }
       }
-      hiddenName.value = nameEl.value.trim();
-      hiddenEmail.value = emailEl.value.trim();
 
-      copyFileIntoHiddenInput(uploadFileInput);
-
-      setTimeout(() => sendForm.submit(), 0);
-
-      window.addToCart(`Custom Engraving (${selectExisting.value || 'Custom'})`, currentPrice);
-      if (typeof window.openCartPanel === 'function') window.openCartPanel();
-
-      alert('Order added to cart');
+      alert('Your custom product has been added to the Cart!');
       showStep('step1');
     });
   }
 
-  // ✅ Add-to-cart (custom)
-  const addToCartCustomBtn = document.getElementById('add-to-cart-custom');
+  const addToCartCustomBtn = $('#add-to-cart-custom');
   if (addToCartCustomBtn) {
     addToCartCustomBtn.addEventListener('click', () => {
-      const nameEl = document.getElementById('verify-name-custom');
-      const emailEl = document.getElementById('verify-email-custom');
+      const name = ($('#verify-name-custom') && $('#verify-name-custom').value.trim()) || '';
+      const email = ($('#verify-email-custom') && $('#verify-email-custom').value.trim()) || '';
+      if (!name || !email) return alert('Please enter your name and email.');
 
-      // Update summary first
-      updateSummaryCustom();
+      const productName = selectExisting ? selectExisting.value || 'Custom Product' : 'Custom Product';
+      const priceAtClick = currentPrice;
 
-      // Validation
-      if (!validateVerification(nameEl, emailEl)) return;
-      if (!validateCustomizeStep2()) { showStep('step2_custom'); return; }
+      // Add to cart (persisted)
+      addToCartVisual(productName, priceAtClick);
 
-      // Fill hidden fields
-      hiddenFlowType.value = 'customize';
-      hiddenSelectedProduct.value = selectExisting.value || '';
-      hiddenCustomChanges.value = customChanges.value.trim() || '';
-      hiddenCustomFilePlacement.value = filePlacementCustom.value.trim() || '';
-      hiddenPrice.value = Number(currentPrice).toFixed(2);
+      // hidden fields
+      if (hiddenFlowType) hiddenFlowType.value = 'customize';
+      if (hiddenSelectedProduct) hiddenSelectedProduct.value = selectExisting ? selectExisting.value : '';
+      if (hiddenCustomChanges) hiddenCustomChanges.value = customChanges ? customChanges.value : '';
+      if (hiddenCustomFilePlacement) hiddenCustomFilePlacement.value = filePlacementCustom ? filePlacementCustom.value : '';
+      if (hiddenPrice) hiddenPrice.value = `$${priceAtClick}`;
+      if (hiddenEmail) hiddenEmail.value = email;
 
-      let hiddenName = document.getElementById('f-name');
-      if (!hiddenName) {
-        hiddenName = document.createElement('input');
-        hiddenName.type = 'hidden';
-        hiddenName.name = 'name';
-        hiddenName.id = 'f-name';
-        sendForm.appendChild(hiddenName);
+      copyFileIntoHiddenInput(uploadFileCustom || null);
+
+      if (sendForm) {
+        try { sendForm.submit(); } catch (e) { console.warn('Form submit failed', e); }
       }
-      hiddenName.value = nameEl.value.trim();
-      hiddenEmail.value = emailEl.value.trim();
 
-      copyFileIntoHiddenInput(uploadFileCustom);
-
-      setTimeout(() => sendForm.submit(), 0);
-
-      window.addToCart(`Customized: ${selectExisting.value || 'Custom Product'}`, currentPrice);
-      if (typeof window.openCartPanel === 'function') window.openCartPanel();
-
-      alert('Customized order added to cart!');
+      alert('Your customization has been added to the Cart!');
       showStep('step1');
     });
   }
 
+  // ---------------------
+  // Font dropdown helper (unchanged logic, but safe)
+  // ---------------------
+  function createFontDropdown() {
+    if (!fontSelect) return;
+    try {
+      const select = fontSelect;
+      const container = document.createElement('div');
+      container.classList.add('custom-select');
+      select.style.display = 'none';
+
+      const selectedDiv = document.createElement('div');
+      selectedDiv.classList.add('select-selected');
+      selectedDiv.textContent = select.options[select.selectedIndex]?.text || 'Choose a font';
+      container.appendChild(selectedDiv);
+
+      const optionsDiv = document.createElement('div');
+      optionsDiv.classList.add('select-items', 'select-hide');
+
+      for (let i = 0; i < select.options.length; i++) {
+        const option = select.options[i];
+        const optionDiv = document.createElement('div');
+        optionDiv.textContent = option.text;
+        optionDiv.style.fontFamily = option.value ? (option.value.includes(' ') ? `'${option.value}'` : option.value) : '';
+        if (!option.value) optionDiv.style.color = '#999';
+
+        optionDiv.addEventListener('click', function () {
+          select.selectedIndex = i;
+          select.value = option.value;
+          select.dispatchEvent(new Event('change'));
+          selectedDiv.textContent = option.text;
+          selectedDiv.style.fontFamily = option.value ? optionDiv.style.fontFamily : '';
+          closeAllSelect();
+        });
+
+        optionsDiv.appendChild(optionDiv);
+      }
+
+      container.appendChild(optionsDiv);
+      select.parentNode.insertBefore(container, select.nextSibling);
+
+      selectedDiv.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeAllSelect(this);
+        optionsDiv.classList.toggle('select-hide');
+        this.classList.toggle('select-arrow-active');
+      });
+
+      function closeAllSelect(except) {
+        document.querySelectorAll('.select-items').forEach(el => {
+          if (el.previousSibling !== except) el.classList.add('select-hide');
+        });
+        document.querySelectorAll('.select-selected').forEach(el => {
+          if (el !== except) el.classList.remove('select-arrow-active');
+        });
+      }
+
+      document.addEventListener('click', closeAllSelect);
+    } catch (err) {
+      console.warn('Font dropdown init failed:', err);
+    }
+  }
+  createFontDropdown();
+
+  if (fontSelect) {
+    for (let opt of fontSelect.options) {
+      if (opt.value) opt.style.fontFamily = opt.value.includes(' ') ? `'${opt.value}'` : opt.value;
+    }
+  }
+
+  // ---------------------
+  // Startup: load cart, populate UI, show step 1
+  // ---------------------
+  
   populateSelectForMode();
   updatePrice();
   showStep('step1');
+
 });
