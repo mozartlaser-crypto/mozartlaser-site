@@ -280,9 +280,12 @@
     });
 
     // --- Add to Cart ---
-    document.getElementById('addToCart').addEventListener('click', () => {
-      alert('Item added to cart!');
-    });
+  document.getElementById("addToCart").addEventListener("click", () => {
+  const name = "Cross Design with John 14:27";
+  const price = 19.99;
+
+  addToCart(name, price);  // ✔ correct format
+});
 
     // --- Buy Now ---
    document.getElementById('buyNow').addEventListener('click', async () => {
