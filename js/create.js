@@ -1,6 +1,6 @@
 // js/create.js
 // ============================
-// CREATE.JS — Clean rewrite for step navigation, validation, and summary generation
+// CREATE.JS — Combined version with edit-product, add-to-cart, and font dropdown working
 // ============================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -8,18 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // ---------------------
   // State & helpers
   // ---------------------
-  let cartItemsArray = [];
   let currentPrice = 20;
-
   const $ = (sel) => document.querySelector(sel);
 
-function addToCartVisual(productName, price) {
-    if (window.addToCart) {
-        window.addToCart(productName, price);
-    } else {
-        console.warn("cart.js not loaded yet");
-    }
-}
+  function addToCartVisual(productName, price) {
+    if (window.addToCart) window.addToCart(productName, price);
+    else console.warn("cart.js not loaded yet");
+  }
 
   // ---------------------
   // Elements
@@ -42,7 +37,7 @@ function addToCartVisual(productName, price) {
   const selectedProductText = $('#selected-product-text');
   const sendForm = $('#sendForm');
 
-  // hidden form fields
+  // Hidden fields
   const hiddenFlowType = $('#f-flow-type');
   const hiddenProduct = $('#f-product');
   const hiddenText = $('#f-text');
@@ -57,7 +52,7 @@ function addToCartVisual(productName, price) {
   const hiddenEmail = $('#f-email');
 
   // ---------------------
-  // Utility: steps
+  // Utility functions
   // ---------------------
   function showStep(stepId) {
     steps.forEach(s => s.classList.remove('active'));
@@ -66,10 +61,22 @@ function addToCartVisual(productName, price) {
     window.scrollTo(0, 0);
   }
 
-  // ---------------------
-  // STEP 1: populate dropdown depending on mode
-  // (THIS IS SEPARATE FROM CART)
-  // ---------------------
+  function updatePrice() {
+    if (!selectExisting) { currentPrice = 20; return; }
+    if (modeCustomize && modeCustomize.checked) currentPrice = 25;
+    else {
+      const product = selectExisting.value || '';
+      if (product.includes('Plaque')) currentPrice = 40;
+      else if (product.includes('Coin')) currentPrice = 25;
+      else if (product.includes('Wallet')) currentPrice = 35;
+      else currentPrice = 20;
+    }
+    const step3Price = $('#total-price');
+    if (step3Price) step3Price.textContent = `Total: $${currentPrice}`;
+    const step3CustomPrice = $('#total-price-custom');
+    if (step3CustomPrice) step3CustomPrice.textContent = `Total: $${currentPrice}`;
+  }
+
   function populateSelectForMode() {
     if (!selectExisting) return;
     if (modeCustomize && modeCustomize.checked) {
@@ -78,7 +85,7 @@ function addToCartVisual(productName, price) {
         <option value="Coin - Dragon">Coin - Dragon</option>
         <option value="Wallet - Minimalist">Wallet - Minimalist</option>
         <option value="Wallet - Leather">Wallet - Leather</option>
-        <option value="Plaque - Music">Plaque - Music</option>
+        <option value="Cross Design with John 14:27">Cross Design with John 14:27</option>
       `;
     } else {
       selectExisting.innerHTML = `
@@ -92,32 +99,18 @@ function addToCartVisual(productName, price) {
     updatePrice();
   }
 
-  // ---------------------
-  // Price logic
-  // ---------------------
-  function updatePrice() {
-    if (!selectExisting) { currentPrice = 20; return; }
-
-    if (modeCustomize && modeCustomize.checked) {
-      currentPrice = 25;
-    } else {
-      const product = selectExisting.value || '';
-      if (product.includes('Plaque')) currentPrice = 40;
-      else if (product.includes('Coin')) currentPrice = 25;
-      else if (product.includes('Wallet')) currentPrice = 35;
-      else currentPrice = 20;
+  function selectProductByName(name) {
+    if (!selectExisting) return;
+    populateSelectForMode();
+    const option = Array.from(selectExisting.options).find(o => o.value === name);
+    if (option) {
+      selectExisting.value = name;
+      if (selectedProductText) selectedProductText.textContent = name;
+      if (hiddenSelectedProduct) hiddenSelectedProduct.value = name;
+      updatePrice();
     }
-
-    const step3Price = $('#total-price');
-    if (step3Price) step3Price.textContent = `Total: $${currentPrice}`;
-
-    const step3CustomPrice = $('#total-price-custom');
-    if (step3CustomPrice) step3CustomPrice.textContent = `Total: $${currentPrice}`;
   }
 
-  // ---------------------
-  // File copying helper (for hidden form)
-  // ---------------------
   function copyFileIntoHiddenInput(input) {
     if (!sendForm) return;
     const fileField = sendForm.querySelector('input[type="file"]');
@@ -127,54 +120,30 @@ function addToCartVisual(productName, price) {
       dt.items.add(input.files[0]);
       fileField.files = dt.files;
     } else {
-      // clear file input
-      try { fileField.value = ''; } catch (e) { /* ignore */ }
+      try { fileField.value = ''; } catch (e) {}
     }
   }
 
-  // ---------------------
-  // Validation
-  // ---------------------
   function validateFullStep2() {
     const text = (textField && textField.value || '').trim();
     const font = (fontSelect && fontSelect.value) || '';
     const desc = (additionalDesc && additionalDesc.value || '').trim();
-    const fileInput = uploadFileInput;
-    const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
-
-    if (!text && !hasFile && !desc) {
-      alert('Please enter text, upload a file, or add a description.');
-      return false;
-    }
-    if (text && !font) {
-      alert('Please select a font for your engraved text.');
-      return false;
-    }
-    if (hasFile && filePlacementInput && !filePlacementInput.value.trim()) {
-      alert('Please describe how your uploaded design should be placed.');
-      return false;
-    }
+    const hasFile = uploadFileInput && uploadFileInput.files.length > 0;
+    if (!text && !desc && !hasFile) { alert('Enter text, file, or description.'); return false; }
+    if (text && !font) { alert('Select a font.'); return false; }
+    if (hasFile && filePlacementInput && !filePlacementInput.value.trim()) { alert('Describe file placement.'); return false; }
     return true;
   }
 
   function validateCustomStep2() {
-    const selected = (selectExisting && selectExisting.value) || '';
+    const selected = selectExisting && selectExisting.value;
     const changes = (customChanges && customChanges.value || '').trim();
-    const hasFile = uploadFileCustom && uploadFileCustom.files && uploadFileCustom.files.length > 0;
-    if (!selected) {
-      alert('Please select a product to customize.');
-      return false;
-    }
-    if (!changes && !hasFile) {
-      alert('Please describe your changes or upload a design.');
-      return false;
-    }
+    const hasFile = uploadFileCustom && uploadFileCustom.files.length > 0;
+    if (!selected) { alert('Select a product to customize.'); return false; }
+    if (!changes && !hasFile) { alert('Describe changes or upload a file.'); return false; }
     return true;
   }
 
-  // ---------------------
-  // Summary generation
-  // ---------------------
   function escapeHtml(str) {
     return String(str || '')
       .replaceAll('&', '&amp;')
@@ -189,16 +158,13 @@ function addToCartVisual(productName, price) {
     if (s) {
       const text = (textField && textField.value.trim()) || 'None';
       const font = (fontSelect && fontSelect.value) || 'None';
-      const textLoc = (textLocation && textLocation.value.trim()) || 'None';
-      const fileName = (uploadFileInput && uploadFileInput.files && uploadFileInput.files.length > 0)
-        ? uploadFileInput.files[0].name
-        : 'None';
+      const loc = (textLocation && textLocation.value.trim()) || 'None';
+      const fileName = (uploadFileInput && uploadFileInput.files.length > 0) ? uploadFileInput.files[0].name : 'None';
       const desc = (additionalDesc && additionalDesc.value.trim()) || 'None';
-
       s.innerHTML = `
         <p><strong>Engraved Text:</strong> ${escapeHtml(text)}</p>
         <p><strong>Font:</strong> ${escapeHtml(font)}</p>
-        <p><strong>Text Placement:</strong> ${escapeHtml(textLoc)}</p>
+        <p><strong>Text Placement:</strong> ${escapeHtml(loc)}</p>
         <p><strong>Uploaded File:</strong> ${escapeHtml(fileName)}</p>
         <p><strong>Additional Description:</strong> ${escapeHtml(desc)}</p>
         <p><strong>Price:</strong> $${currentPrice}</p>
@@ -207,13 +173,10 @@ function addToCartVisual(productName, price) {
 
     const sc = $('#summary_custom');
     if (sc) {
-      const selected = (selectExisting && selectExisting.value) || 'None';
+      const selected = selectExisting && selectExisting.value || 'None';
       const changes = (customChanges && customChanges.value.trim()) || 'None';
-      const fileNameCustom = (uploadFileCustom && uploadFileCustom.files && uploadFileCustom.files.length > 0)
-        ? uploadFileCustom.files[0].name
-        : 'None';
+      const fileNameCustom = (uploadFileCustom && uploadFileCustom.files.length > 0) ? uploadFileCustom.files[0].name : 'None';
       const placementCustom = (filePlacementCustom && filePlacementCustom.value.trim()) || 'None';
-
       sc.innerHTML = `
         <p><strong>Selected Product:</strong> ${escapeHtml(selected)}</p>
         <p><strong>Requested Changes:</strong> ${escapeHtml(changes)}</p>
@@ -225,28 +188,8 @@ function addToCartVisual(productName, price) {
   }
 
   // ---------------------
-  // Step navigation (delegated handling)
+  // Step navigation click handler
   // ---------------------
-  function handleNext(nextId) {
-    if (nextId === 'step3') {
-      if (!validateFullStep2()) return;
-      populateStep3Summary();
-      showStep('step3');
-      return;
-    }
-    if (nextId === 'step3_custom') {
-      if (!validateCustomStep2()) return;
-      populateStep3Summary();
-      showStep('step3_custom');
-      return;
-    }
-    if (nextId) showStep(nextId);
-  }
-
-  function handlePrev(prevId) {
-    if (prevId) showStep(prevId);
-  }
-
   document.addEventListener('click', (ev) => {
     const btn = ev.target.closest && ev.target.closest('.next-step, .prev-step');
     if (!btn) return;
@@ -254,83 +197,59 @@ function addToCartVisual(productName, price) {
 
     if (btn.classList.contains('next-step')) {
       if (btn.id === 'step1-next') {
-        if (!selectExisting) {
-          alert('Missing product selector.');
-          return;
-        }
+        if (!selectExisting) return alert('Missing product selector.');
         if (modeCustomize && modeCustomize.checked) {
-          if (!selectExisting.value) {
-            alert('Please select a product to customize.');
-            return;
-          }
-          if (hiddenSelectedProduct) hiddenSelectedProduct.value = selectExisting.value;
-          if (selectedProductText) selectedProductText.textContent = selectExisting.value;
-          updatePrice();
+          if (!selectExisting.value) return alert('Select a product.');
           showStep('step2_custom');
-          return;
         } else {
-          updatePrice();
           showStep('step2');
-          return;
         }
+        return;
       }
 
       const nextId = btn.getAttribute('data-next');
-      handleNext(nextId);
-      return;
+      if (nextId === 'step3' && !validateFullStep2()) return;
+      if (nextId === 'step3_custom' && !validateCustomStep2()) return;
+      if (nextId) showStep(nextId);
+      populateStep3Summary();
     }
 
     if (btn.classList.contains('prev-step')) {
       const prevId = btn.getAttribute('data-prev');
-      handlePrev(prevId);
+      if (prevId) showStep(prevId);
     }
   });
 
   // ---------------------
   // File delete buttons
   // ---------------------
-  if (deleteFileBtn && uploadFileInput) {
-    deleteFileBtn.addEventListener('click', () => {
-      uploadFileInput.value = '';
-    });
-  }
-  if (deleteFileCustom && uploadFileCustom) {
-    deleteFileCustom.addEventListener('click', () => {
-      uploadFileCustom.value = '';
-    });
-  }
+  if (deleteFileBtn && uploadFileInput) deleteFileBtn.addEventListener('click', () => uploadFileInput.value = '');
+  if (deleteFileCustom && uploadFileCustom) deleteFileCustom.addEventListener('click', () => uploadFileCustom.value = '');
 
   // ---------------------
-  // Mode toggles & select change
+  // Mode toggle listeners
   // ---------------------
   if (modeCustomize) modeCustomize.addEventListener('change', populateSelectForMode);
   if (modeFull) modeFull.addEventListener('change', populateSelectForMode);
 
-  if (selectExisting) {
-    selectExisting.addEventListener('change', () => {
-      updatePrice();
-      if (selectedProductText) selectedProductText.textContent = selectExisting.value || 'None';
-    });
-  }
+  if (selectExisting) selectExisting.addEventListener('change', () => {
+    updatePrice();
+    if (selectedProductText) selectedProductText.textContent = selectExisting.value || 'None';
+  });
 
   // ---------------------
-  // Add to cart handlers (full & custom flows)
-  // Important: add to cart (storage + render) happens BEFORE sending the hidden form.
+  // Add to cart buttons
   // ---------------------
   const addToCartBtn = $('#add-to-cart');
   if (addToCartBtn) {
     addToCartBtn.addEventListener('click', () => {
       const name = ($('#verify-name') && $('#verify-name').value.trim()) || '';
       const email = ($('#verify-email') && $('#verify-email').value.trim()) || '';
-      if (!name || !email) return alert('Please enter your name and email.');
+      if (!name || !email) return alert('Enter name and email.');
 
       const productName = selectExisting ? selectExisting.value || 'Custom Product' : 'Custom Product';
-      const priceAtClick = currentPrice;
+      addToCartVisual(productName, currentPrice);
 
-      // Add to cart (persisted)
-      addToCartVisual(productName, priceAtClick);
-
-      // populate hidden form fields
       if (hiddenFlowType) hiddenFlowType.value = 'create-your-own';
       if (hiddenProduct) hiddenProduct.value = selectExisting ? selectExisting.value : '';
       if (hiddenText) hiddenText.value = textField ? textField.value : '';
@@ -338,12 +257,11 @@ function addToCartVisual(productName, price) {
       if (hiddenLocation) hiddenLocation.value = textLocation ? textLocation.value : '';
       if (hiddenFilePlacement) hiddenFilePlacement.value = filePlacementInput ? filePlacementInput.value : '';
       if (hiddenDescription) hiddenDescription.value = additionalDesc ? additionalDesc.value : '';
-      if (hiddenPrice) hiddenPrice.value = `$${priceAtClick}`;
+      if (hiddenPrice) hiddenPrice.value = `$${currentPrice}`;
       if (hiddenEmail) hiddenEmail.value = email;
 
-      copyFileIntoHiddenInput(uploadFileInput || null);
+      copyFileIntoHiddenInput(uploadFileInput);
 
-      // submit silently to backend (if desired)
       if (sendForm) {
         try { sendForm.submit(); } catch (e) { console.warn('Form submit failed', e); }
       }
@@ -358,23 +276,19 @@ function addToCartVisual(productName, price) {
     addToCartCustomBtn.addEventListener('click', () => {
       const name = ($('#verify-name-custom') && $('#verify-name-custom').value.trim()) || '';
       const email = ($('#verify-email-custom') && $('#verify-email-custom').value.trim()) || '';
-      if (!name || !email) return alert('Please enter your name and email.');
+      if (!name || !email) return alert('Enter name and email.');
 
       const productName = selectExisting ? selectExisting.value || 'Custom Product' : 'Custom Product';
-      const priceAtClick = currentPrice;
+      addToCartVisual(productName, currentPrice);
 
-      // Add to cart (persisted)
-      addToCartVisual(productName, priceAtClick);
-
-      // hidden fields
       if (hiddenFlowType) hiddenFlowType.value = 'customize';
       if (hiddenSelectedProduct) hiddenSelectedProduct.value = selectExisting ? selectExisting.value : '';
       if (hiddenCustomChanges) hiddenCustomChanges.value = customChanges ? customChanges.value : '';
       if (hiddenCustomFilePlacement) hiddenCustomFilePlacement.value = filePlacementCustom ? filePlacementCustom.value : '';
-      if (hiddenPrice) hiddenPrice.value = `$${priceAtClick}`;
+      if (hiddenPrice) hiddenPrice.value = `$${currentPrice}`;
       if (hiddenEmail) hiddenEmail.value = email;
 
-      copyFileIntoHiddenInput(uploadFileCustom || null);
+      copyFileIntoHiddenInput(uploadFileCustom);
 
       if (sendForm) {
         try { sendForm.submit(); } catch (e) { console.warn('Form submit failed', e); }
@@ -386,7 +300,7 @@ function addToCartVisual(productName, price) {
   }
 
   // ---------------------
-  // Font dropdown helper (unchanged logic, but safe)
+  // Font dropdown
   // ---------------------
   function createFontDropdown() {
     if (!fontSelect) return;
@@ -456,11 +370,23 @@ function addToCartVisual(productName, price) {
   }
 
   // ---------------------
-  // Startup: load cart, populate UI, show step 1
+  // Startup: handle URL params
   // ---------------------
-  
+  const urlParams = new URLSearchParams(window.location.search);
+  const productParam = urlParams.get('product');
+  const stepParam = urlParams.get('step');
+  const modeParam = urlParams.get('mode');
+
+  if (modeParam === 'template' && modeCustomize) modeCustomize.checked = true;
   populateSelectForMode();
-  updatePrice();
-  showStep('step1');
+
+  if (productParam) selectProductByName(productParam);
+
+  if (stepParam === '2') {
+    if (modeParam === 'template') showStep('step2_custom');
+    else showStep('step2');
+  } else {
+    showStep('step1');
+  }
 
 });

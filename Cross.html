@@ -140,6 +140,20 @@
     .add-cart:hover {
       background: #eee;
     }
+	  
+	    .customize-btn {
+  background: white;
+  color: black;
+  border: 1px solid black;
+  padding: 12px 25px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.customize-btn:hover {
+  background: #eee;
+}
 
     /* Mobile */
     @media (max-width: 768px) {
@@ -176,6 +190,7 @@
   border-radius: 10px;
   transition: transform 0.4s ease;
 }
+	
   </style>
 </head>
 <body>
@@ -228,6 +243,7 @@
       <p>A beautiful ornate wooden cross with a rose wrapping around it and John 14:27 underneath engraved on a wooden plaque. </p>
 
       <div class="buttons">
+		 <button class="customize-btn" id="customizeThis">Customize This Product</button>
         <button class="buy-now" id="buyNow" data-name="Cross Design with John 14:27" data-price="19.99">Buy Now</button>
         <button class="add-cart" id="addToCart">Add to Cart</button>
       </div>
@@ -285,8 +301,14 @@
   const price = 19.99;
 
   addToCart(name, price);  // ✔ correct format
-});
+});	
+	  
+	    // --- Customize This Product ---
+document.getElementById("customizeThis").addEventListener("click", () => {
+  const productName = "Cross Design with John 14:27";
 
+  window.location.href = `create.html?mode=template&product=${encodeURIComponent(productName)}&step=2`;
+});
     // --- Buy Now ---
    document.getElementById('buyNow').addEventListener('click', async () => {
   const button = document.getElementById('buyNow');
@@ -297,6 +319,7 @@
     alert("This product is not properly configured.");
     return;
   }
+	
 
   // Create a temporary cart with just this product
   const singleItemCart = [{ name, price, quantity: 1 }];
