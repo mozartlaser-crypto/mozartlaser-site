@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="css/footer.css">
   <link rel="stylesheet" href="css/cart.css">
   <script src="https://js.stripe.com/v3/"></script>
-	<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@300;400;700&display=swap" rel="stylesheet">
 
   <style>
 /* Reset */
@@ -107,6 +107,45 @@ html, body {
   max-height: 90vh;
   object-fit: cover;
 }
+	  /* Center container */
+.button-center {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+/* Base for both buttons */
+.btn-large {
+  padding: 18px 40px;
+  font-size: 1.4rem;
+  border-radius: 40px;
+  text-decoration: none;
+  display: inline-block;
+  transition: 0.2s ease;
+  font-weight: 600;
+}
+
+/* Black button */
+.btn-black {
+  background: black;
+  color: white;
+}
+
+.btn-black:hover {
+  opacity: 0.1;
+}
+
+/* White button */
+.btn-white {
+  background: white;
+  color: black;
+  border: 2px solid black;
+}
+
+.btn-white:hover {
+  background: grey;
+}
   </style>
 </head>
 
@@ -145,10 +184,10 @@ html, body {
 
 <!-- HERO -->
 <section class="hero">
- <div class="hero-slide" style="background-image: url('images/bwlaser.jpg');"></div>
+  <div class="hero-slide" style="background-image: url('images/bwlaser.jpg');"></div>
   <div class="hero-slide active" style="background-image: url('images/IMG_2325.jpg');"></div>
-<div class="hero-slide" style="background-image: url('images/laser.jpg');"></div>
- 
+  <div class="hero-slide" style="background-image: url('images/laser.jpg');"></div>
+
   <div class="dots">
     <span class="dot active" data-index="0"></span>
     <span class="dot" data-index="1"></span>
@@ -172,7 +211,43 @@ html, body {
 
 <!-- MAIN CONTENT -->
 <main class="page-content" id="mainContent" tabindex="-1">
-  <h2 id="home">Hello — this website is currently under development</h2>
+
+  <!-- NEW HOMEPAGE CONTENT BELOW -->
+
+  <section style="padding: 60px 20px; max-width: 900px; margin: auto; text-align: center;">
+    <h2 style="font-weight: 400; font-size: 32px; margin-bottom: 20px;">Custom Engraving Made Simple</h2>
+    <p style="font-size: 19px; line-height: 1.7; font-weight: 300;">
+      Whether you’re personalizing a gift, creating décor, or designing something completely unique—Mozart Laser makes it easy.
+      Every engraving is crafted with care using professional equipment and clean, modern design workflows.
+    </p>
+  </section>
+
+	<div class="button-center">
+  <a href="create.html" class="btn-large btn-black">Create</a>
+  <a href="products.html" class="btn-large btn-white">Products</a>
+</div>
+	
+  <section style="padding: 60px 20px; background: #fafafa;">
+    <div style="max-width: 1100px; margin: auto;">
+      <h2 style="text-align: center; font-weight: 400; font-size: 30px; margin-bottom: 40px;">What We Offer</h2>
+
+      <ul style="list-style: none; padding: 0; max-width: 800px; margin: auto; font-size: 19px; font-weight: 300; line-height: 1.8;">
+        <li>• High-quality wood engravings</li>
+        <li>• Personalized gifts for any occasion</li>
+        <li>• Clean, precise graphics created with professional tools</li>
+        <li>• Fully custom projects starting from your idea, sketch, or design</li>
+      </ul>
+    </div>
+  </section>
+
+  <section style="padding: 60px 20px; max-width: 900px; margin: auto; text-align: center;">
+    <h2 style="font-weight: 400; font-size: 30px; margin-bottom: 20px;">How It Works</h2>
+    <p style="font-size: 19px; line-height: 1.7; font-weight: 300;">
+      Pick from pre-designed products or build something from scratch. Our Create tool guides you through choosing your style,
+      adding text or graphics, and sending the final design straight to us for engraving.
+    </p>
+  </section>
+
 </main>
 
 <script src="js/navbar.js"></script>
@@ -206,8 +281,9 @@ dots.forEach(dot => {
 });
 
 showSlide(0);
-	// --- Swipe gesture support for hero slides ---
-const sliderContainer = document.querySelector('.hero'); // use .hero instead of .hero-slider
+
+// Swipe support
+const sliderContainer = document.querySelector('.hero');
 let startX = 0;
 
 if (sliderContainer) {
@@ -221,16 +297,13 @@ if (sliderContainer) {
 
     if (Math.abs(diff) > 50) {
       if (diff > 0) {
-        // Swipe left → next slide
         let next = (currentIndex + 1) % slides.length;
         showSlide(next);
       } else {
-        // Swipe right → previous slide
         let prev = (currentIndex - 1 + slides.length) % slides.length;
         showSlide(prev);
       }
 
-      // reset interval so it doesn’t conflict
       clearInterval(interval);
       interval = setInterval(() => {
         let next = (currentIndex + 1) % slides.length;
@@ -246,9 +319,8 @@ if (sliderContainer) {
   <div class="footer-content">
     <div class="social-links">
       <a href="https://facebook.com" target="_blank" aria-label="Facebook"><img src="images/facebook-icon.png" alt="Facebook"></a>
-	 <a href="https://instagram.com" target="_blank" aria-label="Instagram"><img src="images/instagram-icon.png" alt="Instagram"></a>
+      <a href="https://instagram.com" target="_blank" aria-label="Instagram"><img src="images/instagram-icon.png" alt="Instagram"></a>
       <a href="https://X.com" target="_blank" aria-label="X"><img src="images/X-icon.png" alt="X"></a>
-     
     </div>
     <p>&copy; 2025 Mozart Laser. All rights reserved.</p>
   </div>
