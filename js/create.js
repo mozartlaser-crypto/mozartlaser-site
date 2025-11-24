@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <option value="">-- Choose a Product to Customize --</option>
         <option value="Coin - Dragon">Coin - Dragon</option>
         <option value="Wallet - Minimalist">Wallet - Minimalist</option>
-        <option value="Wallet - Leather">Wallet - Leather</option>
+        <option value="Detailed Classic Train Engraving">Detailed Classic Train Engraving</option>
         <option value="Cross Design with John 14:27">Cross Design with John 14:27</option>
       `;
     } else {

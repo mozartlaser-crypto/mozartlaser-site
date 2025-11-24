@@ -140,7 +140,19 @@
     .add-cart:hover {
       background: #eee;
     }
+  .customize-btn {
+  background: white;
+  color: black;
+  border: 1px solid black;
+  padding: 12px 25px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
 
+.customize-btn:hover {
+  background: #eee;
+}
     /* Mobile */
     @media (max-width: 768px) {
       .product-container {
@@ -228,6 +240,9 @@
       <p>A delightful wooden plaque engraved with a highly detailed classic train. </p>
 
       <div class="buttons">
+		 <button class="customize-btn" id="customizeThis" data-product="Detailed Classic Train Engraving">
+  Customize This Product
+</button>
         <button class="buy-now" id="buyNow" data-name="Detailed Classic Train Engraving" data-price="17.99">Buy Now</button>
         <button class="add-cart" id="addToCart">Add to Cart</button>
       </div>
@@ -322,6 +337,12 @@
   }
 });
   </script>
+	<script>
+document.getElementById("customizeThis").addEventListener("click", () => {
+  const productName = "Detailed Classic Train Engraving";
+  window.location.href = `create.html?mode=template&product=${encodeURIComponent(productName)}&step=2`;
+});
+</script>
 <!-- FOOTER -->
 <footer class="site-footer">
   <div class="footer-content">
